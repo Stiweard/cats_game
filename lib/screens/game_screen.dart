@@ -35,6 +35,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   double _waterTop = 0;
   double _waterLeft = 0;
 
+  // Hearts
+  final List<HeartParticle> _hearts = [];
+
   // Bonus Text
   final List<BonusParticle> _bonusParticles = [];
 
@@ -298,7 +301,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
                     value: _score / _goal,
-                    backgroundColor: Colors.white.withOpacity(0.3),
+                    backgroundColor: Colors.white.withValues(alpha: 0.3),
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       Colors.white,
                     ),
@@ -314,31 +317,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             Positioned(
               top: _yarnTop,
               left: _yarnLeft,
-              child: GestureDetector(
-                onTapDown: _onYarnTapped,
-                child: TweenAnimationBuilder(
-                  tween: Tween<double>(begin: 0.8, end: 1.1),
-                  duration: const Duration(milliseconds: 500),
-                  builder: (context, value, child) =>
-                      Transform.scale(scale: value, child: child),
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 5,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset('assets/yarn.png', fit: BoxFit.cover),
-                    ),
-                  ),
-                ),
+              child: _buildItem(
+                'assets/yarn.png',
+                _onYarnTapped,
+                scale: 1.0,
+                backgroundColor: Colors.pink.shade100,
               ),
             ),
 
@@ -347,19 +330,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             Positioned(
               top: _waterTop,
               left: _waterLeft,
-              child: GestureDetector(
-                onTap: _onWaterTapped,
-                child: TweenAnimationBuilder(
-                  tween: Tween<double>(begin: 0.8, end: 1.2),
-                  duration: const Duration(milliseconds: 400),
-                  builder: (context, value, child) =>
-                      Transform.scale(scale: value, child: child),
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    child: Image.asset('assets/water.png'),
-                  ),
-                ),
+              child: _buildItem(
+                'assets/water.png',
+                (details) => _onWaterTapped(),
+                scale: 1.0,
+                isDanger: true,
+                backgroundColor: Colors.blue.shade100,
               ),
             ),
 
@@ -392,69 +368,106 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           ),
 
           // Hearts Particles
-          ..._hearts
-              .map(
-                (heart) => Positioned(
-                  left: heart.position.dx - 20,
-                  top: heart.position.dy - 50,
-                  child: TweenAnimationBuilder(
-                    tween: Tween<double>(begin: 0, end: 1),
-                    duration: const Duration(milliseconds: 800),
-                    builder: (context, double value, child) {
-                      return Opacity(
-                        opacity: 1.0 - value,
-                        child: Transform.translate(
-                          offset: Offset(0, -100 * value),
-                          child: Icon(
-                            Icons.favorite,
-                            color: Colors.redAccent,
-                            size: heart.isBig ? 60 : 40,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              )
-              .toList(),
+          ..._hearts.map(
+            (heart) => Positioned(
+              left: heart.position.dx - 20,
+              top: heart.position.dy - 50,
+              child: TweenAnimationBuilder(
+                tween: Tween<double>(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 800),
+                builder: (context, double value, child) {
+                  return Opacity(
+                    opacity: 1.0 - value,
+                    child: Transform.translate(
+                      offset: Offset(0, -100 * value),
+                      child: Icon(
+                        Icons.favorite,
+                        color: Colors.redAccent,
+                        size: heart.isBig ? 60 : 40,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
 
           // Bonus Particles
-          ..._bonusParticles
-              .map(
-                (bonus) => Positioned(
-                  left: bonus.position.dx - 20,
-                  top: bonus.position.dy - 50,
-                  child: TweenAnimationBuilder(
-                    tween: Tween<double>(begin: 0, end: 1),
-                    duration: const Duration(milliseconds: 800),
-                    builder: (context, double value, child) {
-                      return Opacity(
-                        opacity: 1.0 - value,
-                        child: Transform.translate(
-                          offset: Offset(0, -60 * value),
-                          child: const Text(
-                            "+5",
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purpleAccent,
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 5,
-                                  color: Colors.white,
-                                  offset: Offset(1, 1),
-                                ),
-                              ],
+          ..._bonusParticles.map(
+            (bonus) => Positioned(
+              left: bonus.position.dx - 20,
+              top: bonus.position.dy - 50,
+              child: TweenAnimationBuilder(
+                tween: Tween<double>(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 800),
+                builder: (context, double value, child) {
+                  return Opacity(
+                    opacity: 1.0 - value,
+                    child: Transform.translate(
+                      offset: Offset(0, -60 * value),
+                      child: const Text(
+                        "+5",
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purpleAccent,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 5,
+                              color: Colors.white,
+                              offset: Offset(1, 1),
                             ),
-                          ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
-                ),
-              )
-              .toList(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildItem(
+    String asset,
+    Function(TapDownDetails) onTap, {
+    double scale = 1.0,
+    bool isDanger = false,
+    Color backgroundColor = Colors.white,
+  }) {
+    return GestureDetector(
+      onTapDown: onTap,
+      child: TweenAnimationBuilder(
+        tween: Tween<double>(begin: 0.8, end: 1.0 * scale),
+        duration: const Duration(milliseconds: 500),
+        builder: (context, value, child) =>
+            Transform.scale(scale: value, child: child),
+        child: Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: isDanger
+                    ? Colors.blue.withValues(alpha: 0.3)
+                    : Colors.pink.withValues(alpha: 0.3),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 35,
+            backgroundColor: backgroundColor,
+            backgroundImage: AssetImage(
+              asset,
+            ), // Use backgroundImage for clipping
+          ),
+        ),
       ),
     );
   }
@@ -474,7 +487,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   spreadRadius: 2,
                   blurRadius: 10,
                 ),
@@ -490,7 +503,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Text(
